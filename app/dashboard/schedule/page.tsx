@@ -20,7 +20,7 @@ export default function TeacherSchedulePage() {
 
   useEffect(() => {
     // Sesuai controller: exports.getMySchedules
-    api.get('/teacher/schedules') // Sesuaikan route backend Anda
+    api.get('/schedules') // Sesuaikan route backend Anda
        .then((res) => {
          const data = Array.isArray(res.data) ? res.data : res.data.data || [];
          setSchedules(data);

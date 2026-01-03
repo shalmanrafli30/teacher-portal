@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Ganti URL ini dengan URL VPS Backend Anda
-const API_URL = 'https://api.meccaschool.online/api'; 
+const API_URL = 'https://api.meccaschool.online/api/teacher'; 
 // Atau http://localhost:3002 jika backend lokal
 
 const api = axios.create({

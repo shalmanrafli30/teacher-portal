@@ -18,38 +18,66 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await axios.post('https://api.meccaschool.online/api/auth/login', {
-        username: nip,
-        password: password,
-        role: 'teacher'
+      // [UPDATE] Menggunakan Endpoint GraphQL
+      const response = await axios.post('https://api.meccaschool.online/graphql', {
+        query: `
+          mutation Login($username: String!, $password: String!, $role: String!) {
+            login(username: $username, password: $password, role: $role) {
+              token
+              user {
+                id
+                username
+                name
+                role
+              }
+            }
+          }
+        `,
+        variables: {
+          username: nip,
+          password: password,
+          role: 'teacher' // Hardcode role teacher
+        }
       });
 
-      // --- PERBAIKAN DI SINI ---
-      // 1. Ambil token dan object user
-      const { token, user } = response.data;
-      
-      // 2. Ambil role dari dalam object user
-      // Gunakan optional chaining (?.) jaga-jaga kalau user null
-      const role = user?.role; 
-
-      // 3. Cek Role
-      if (role !== 'teacher') {
-        setError('Akun ini terdaftar, tapi bukan sebagai Guru.');
-        setLoading(false);
-        return;
+      // [UPDATE] Cek Error dari GraphQL
+      if (response.data.errors) {
+        throw new Error(response.data.errors[0].message);
       }
 
-      // 4. Simpan ke LocalStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role); // Simpan role juga
+      const loginData = response.data.data?.login;
+      const token = loginData?.token;
+      const user = loginData?.user;
 
-      // 5. Redirect
+      if (!token) {
+        throw new Error('Gagal login. Token tidak ditemukan.');
+      }
+
+      // Validasi Role di Client (Double check)
+      if (user?.role !== 'teacher') {
+        throw new Error('Akun ini terdaftar, tapi bukan sebagai Guru.');
+      }
+
+      // Simpan ke LocalStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // Redirect ke Dashboard
       router.push('/dashboard'); 
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      // Tampilkan pesan error spesifik dari backend jika ada
-      const msg = err.response?.data?.message || 'NIP atau Password salah.';
+      
+      let msg = 'NIP atau Password salah.';
+      
+      if (axios.isAxiosError(err)) {
+         // Error jaringan atau axios
+         msg = err.response?.data?.message || err.message || msg;
+      } else if (err instanceof Error) {
+         // Error dari throw new Error di atas (GraphQL errors)
+         msg = err.message;
+      }
+      
       setError(msg);
     } finally {
       setLoading(false);
@@ -57,18 +85,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-900">
+    <div className="min-h-screen flex items-center justify-center bg-blue-900 px-4">
       <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+        
+        {/* Header Icon */}
         <div className="flex justify-center mb-6">
-          <div className="bg-blue-100 p-4 rounded-full">
+          <div className="bg-blue-100 p-4 rounded-full shadow-inner">
             <GraduationCap className="text-blue-700 w-10 h-10" />
           </div>
         </div>
+        
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-1">Teacher Portal</h1>
         <p className="text-center text-gray-500 mb-8 text-sm">Masuk untuk mengelola kelas</p>
 
+        {/* Error Alert */}
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 text-center border border-red-200">
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center border border-red-200 animate-pulse">
             {error}
           </div>
         )}
@@ -79,7 +111,7 @@ export default function LoginPage() {
             <input
               type="text"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-800 placeholder-gray-400"
               placeholder="Nomor Induk Pegawai"
               value={nip}
               onChange={(e) => setNip(e.target.value)}
@@ -92,7 +124,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-400"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-800 placeholder-gray-400"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -102,11 +134,17 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg transition-all flex justify-center items-center shadow-lg hover:shadow-xl"
+            className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg transition-all flex justify-center items-center shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-[0.98]"
           >
             {loading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Masuk Dashboard'}
           </button>
         </form>
+
+        <div className="mt-8 text-center">
+            <p className="text-xs text-gray-400">
+                &copy; {new Date().getFullYear()} Mecca School System
+            </p>
+        </div>
       </div>
     </div>
   );
