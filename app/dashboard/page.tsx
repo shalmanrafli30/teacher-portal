@@ -144,7 +144,7 @@ export default function TeacherDashboard() {
                       <div className="p-3 bg-gray-50 rounded-full">
                         <BookOpen className="w-6 h-6 text-yellow-400" />
                       </div>
-                      <span className="text-sm font-bold text-gray-400">Jadwal Lengkap</span>
+                      <span className="text-sm font-bold text-gray-700">Jadwal Lengkap</span>
                   </div>
               </div>
         </div>
