@@ -62,7 +62,7 @@ export default function AttendancePage() {
     try {
         const api = createApi();
         // Panggil endpoint baru: getAttendanceByClass
-        // Ini akan mengembalikan daftar SEMUA siswa di kelas tersebut + data absensi mereka hari ini (jika ada)
+        // Endpoint ini mengembalikan daftar SEMUA siswa di kelas + status absen mereka (jika ada)
         const res = await api.get(`/attendance/${selectedScheduleId}`, {
             params: { date }
         });
@@ -74,9 +74,8 @@ export default function AttendancePage() {
         const initialMap: Record<number, string> = {};
         
         students.forEach((student: any) => {
-            // Cek apakah siswa ini sudah punya data absensi hari ini
-            // Backend biasanya mengembalikan dalam bentuk array "Attendances" atau objek tunggal "Attendance" 
-            // tergantung relasi hasMany/hasOne. Kita handle keduanya.
+            // Cek properti attendance dari backend (bisa array 'Attendances' atau object 'Attendance')
+            // Sesuai dengan include Sequelize di backend
             const attRecord = student.Attendances?.[0] || student.attendances?.[0] || student.Attendance || student.attendance;
             
             if (attRecord) {
@@ -96,12 +95,12 @@ export default function AttendancePage() {
     }
   };
 
-  // 3. Handle Perubahan Status (Radio Button)
+  // 3. Handle Perubahan Status
   const handleStatusChange = (studentId: number, status: string) => {
     setStatusMap(prev => ({ ...prev, [studentId]: status }));
   };
 
-  // 4. Submit Absensi (Simpan Semua)
+  // 4. Submit Absensi
   const handleSubmit = async () => {
     if (attendanceData.length === 0) return;
     
@@ -109,8 +108,7 @@ export default function AttendancePage() {
     try {
         const api = createApi();
         
-        // Kirim request simpan per siswa
-        // (Bisa dioptimasi dengan bulk insert di backend, tapi loop request ini cukup aman untuk <40 siswa)
+        // Simpan per siswa
         const promises = Object.entries(statusMap).map(([studentIdStr, status]) => {
             const studentId = parseInt(studentIdStr);
             return api.post('/attendance', {
@@ -124,7 +122,7 @@ export default function AttendancePage() {
         await Promise.all(promises);
         alert('Absensi berhasil disimpan!');
         
-        // Refresh data untuk memastikan sinkronisasi
+        // Refresh data
         handleLoad();
         
     } catch (error) {
