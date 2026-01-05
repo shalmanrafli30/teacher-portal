@@ -24,9 +24,9 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
 
   const menuItems = [
     {name: "Dashboard", href: "/dashboard", icon: LayoutDashboard},
-    {name: "Jadwal Mengajar", href: "/schedule", icon: Calendar}, // Sesuaikan href
-    {name: "Input Nilai", href: "/grades", icon: ClipboardList},   // Sesuaikan href
-    {name: "Input Absensi", href: "/attendance", icon: UserCheck}  // Sesuaikan href
+    {name: "Jadwal Mengajar", href: "/dashboard/schedule", icon: Calendar}, // Sesuaikan href
+    {name: "Input Nilai", href: "/dashboard/grades", icon: ClipboardList},   // Sesuaikan href
+    {name: "Input Absensi", href: "/dashboard/attendance", icon: UserCheck}  // Sesuaikan href
   ];
 
   return (
